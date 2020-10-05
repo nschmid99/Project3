@@ -1,8 +1,3 @@
-//
-//  Squares.hpp
-//  Project3
-//
-
 
 #ifndef Squares_hpp
 #define Squares_hpp
@@ -20,6 +15,8 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 
+#include <algorithm>
+#include <vector>
 
 using namespace cv;
 class Squares
@@ -31,14 +28,17 @@ public:
     int y1;
     int x2;
     int y2;
+    float ftrs;
     virtual float count(ci::Rectf)=0;
     virtual float getDivisorOfSum()=0;
+
     virtual void setN(int n)
     {
         N=n;
         
     }
     virtual float tally()=0;
+    virtual float max()=0;
     
     
     virtual void drawRect()
@@ -62,7 +62,7 @@ public:
                 
                 float sum = count(curSquare);   //count up instances in a square
                 float getDivisorOfSum=sum/100;  //divide sum to be able to change color
-                
+            //max();
                 cinder::gl::color(getDivisorOfSum*N*N*255,0,0,.5); //set color to red
                 cinder::gl::drawSolidRect(curSquare);   //draw square
                 
@@ -77,8 +77,9 @@ public:
 class SquaresFrameDiff : public Squares{    //frame diff class inherits functionality from squares
 private:
     cv::Mat frameDiff;
-    int s;
+    float s;
     int num;
+    std::vector <float> allFeatures;
 public:
     virtual void setN(int n)    //change n
     {
@@ -89,18 +90,28 @@ public:
         Squares::setN(num); //allows for n to change
         frameDiff = b;
         Squares::drawRect();    //creates and draws squares
-        
+       //max();
     }
+    
     virtual float count(ci::Rectf curSquare)    //passes in one rectangle at a time
     {
         s=0;
+      
+
         for(int o=x1; o<x2; o++){       //gets square boundaries
             for(int q=y1; q<y2;q++){
                 
                 s=s+frameDiff.at<u_int8_t>(q,o);    //adds up pixels
-                
+                int sum=s;
+                  for(int i=0; i<allFeatures.size();i++){
+                allFeatures.push_back(sum);
+                      std::cout<<allFeatures[i]<<std::endl;
+                  }
             }
         }
+            
+       // }
+ 
         return s;
     }
     
@@ -112,52 +123,32 @@ public:
     }
     
     virtual float tally(){
-        float tally=s;
-        return tally;
+        float tally=0;
+//        for(int o=x1; o<x2; o++){
+//        for(int q=y1; q<y2;q++){
+//            tally=tally+s; //add up all the pixels in each square to get the total number of pixels
+//          }}
+//        for(int i=0; i<allFeatures.size(); i++){
+//        tally=tally+allFeatures[i].totalFeatures(s);
+//               }
+      //  std::cout<<tally<<std::endl;
+          return tally;
     }
+    
+    virtual float max(){
+        float maxm=0;
+        std::cout<<"size"<<allFeatures.size()<<std::endl;
+         for(int i=0; i<allFeatures.size(); i++)
+         {
+              //std::cout<<"ftrs"<<allFeatures[i]<<std::endl;
+      maxm= *std::max_element(allFeatures.begin(),allFeatures.end());
+           //  std::cout<<"max"<<maxm<<std::endl;
+         }
+        return 0;
+       // return maxm;
+         }
 };
 
-
-class SquaresFeatures : public Squares
-{
-private:
-    std::vector<cv::Point2f> features;
-    int s;
-    int num;
-public:
-    virtual void setN(int n){   //change n
-        num=n;
-    }
-    
-    virtual void drawRect(std::vector<cv::Point2f> pts)
-    {
-        Squares::setN(num);     //allows for n to change
-        features = pts;
-        Squares::drawRect();    //creates and draws rectangles
-    }
-    
-    virtual float count(ci::Rectf curSquare)    //passes in one rectangle at a time
-    {
-        //return the sum of the features points
-        s=0;
-        for(int index =0; index<features.size();index++){
-            if( curSquare.contains(cinder::fromOcv(features[index]))){  //if the square contains features
-                s++;    //add to the sum
-                
-            }
-            
-        }
-        return s;
-    }
-    
-    float getDivisorOfSum()
-    {
-        float setColor=s/1000;  //divides total features for color
-        cinder::gl::color(setColor*N*N*255,0,0,.5); //sets the color
-        return 1;   //faux return. not used
-    }
-    
-};
 
 
 
